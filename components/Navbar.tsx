@@ -1,57 +1,55 @@
 'use client'
-
+import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { LayoutDashboard, PlusCircle, CreditCard, Layers, Landmark } from 'lucide-react'
+import { LayoutDashboard, CreditCard, ReceiptText, Landmark, Tags, WalletCards, LogOut } from 'lucide-react'
 
 export default function Navbar() {
-  const pathname = usePathname()
+  const router = useRouter()
 
-  const links = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/lancamentos', label: 'Lançamentos', icon: PlusCircle },
-    { href: '/faturas', label: 'Faturas', icon: CreditCard },
-    { href: '/categorias', label: 'Categorias', icon: Layers },
-    { href: '/contas', label: 'Contas & Cartões', icon: Landmark },
-  ]
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   return (
-    <nav className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 mb-8 flex flex-wrap items-center justify-between gap-4 max-w-7xl mx-auto shadow-xl">
-      {/* Logo / Identidade */}
-      <div className="flex items-center gap-2 px-3">
-        <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
-        <span className="font-black tracking-wider text-xs uppercase text-slate-200">
-          Finance<span className="text-emerald-400">Core</span>
-        </span>
+    <nav className="bg-slate-900 border-b border-slate-800 px-6 py-4 mb-8 rounded-xl flex items-center justify-between">
+      <div className="flex items-center gap-8">
+        {/* Logo/Dashboard */}
+        <Link href="/" className="flex items-center gap-3 text-xl font-black text-white hover:text-violet-400 transition-colors">
+          <img src="/icon.png" alt="Logo" className="w-8 h-8 rounded-full" />
+          FinanceCore
+        </Link>
+        
+        {/* Menu Principal */}
+        <div className="flex items-center gap-6">
+          <Link href="/" className="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white">
+            <LayoutDashboard size={16} /> Dashboard
+          </Link>
+          <Link href="/lancamentos" className="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white">
+            <ReceiptText size={16} /> Lançamentos
+          </Link>
+          <Link href="/faturas" className="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white">
+            <CreditCard size={16} /> Faturas
+          </Link>
+          <Link href="/contas" className="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white">
+            <Landmark size={16} /> Contas
+          </Link>
+          <Link href="/cartoes" className="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white">
+            <WalletCards size={16} /> Cartões
+          </Link>
+          <Link href="/categorias" className="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white">
+            <Tags size={16} /> Categorias
+          </Link>
+        </div>
       </div>
-
-      {/* Links de Navegação */}
-      <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto">
-        {links.map((link) => {
-          const Icon = link.icon
-          const isActive = pathname === link.href
-
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
-                isActive
-                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/10'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-950/50'
-              }`}
-            >
-              <Icon size={14} />
-              {link.label}
-            </Link>
-          )
-        })}
-      </div>
-
-      {/* Indicador de Status Local */}
-      <div className="hidden md:flex items-center gap-2 px-3 text-[10px] font-mono text-slate-500">
-        <span>Ambiente: Dev Local</span>
-      </div>
+      
+      <button 
+        onClick={handleLogout} 
+        className="flex items-center gap-2 text-red-400 hover:text-red-300 text-sm font-bold transition-colors"
+      >
+        <LogOut size={16} /> Sair
+      </button>
     </nav>
   )
 }
