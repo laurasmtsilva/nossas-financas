@@ -158,14 +158,14 @@ export default function FaturasPage() {
   const totalFatura = parcelas.reduce((acc, curr) => acc + curr.valor, 0)
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white font-sans p-8">
+    <main className="min-h-screen bg-slate-950 text-white font-sans p-4 md:p-8 max-w-full overflow-x-hidden">
       <Navbar />
 
       <div className="max-w-7xl mx-auto">
         {/* Cabeçalho da Página */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-violet-400 flex items-center gap-2">
+            <h1 className="text-xl md:text-2xl font-bold text-[#9D4EDD] flex items-center gap-2">
               <CreditCard size={26} /> Controle de Faturas
             </h1>
             <p className="text-slate-400 text-sm mt-1">
@@ -179,7 +179,7 @@ export default function FaturasPage() {
             <select 
               value={cartaoSelecionado}
               onChange={(e) => setCartaoSelecionado(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-sm font-semibold focus:outline-none text-violet-300"
+              className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-sm font-semibold focus:outline-none focus:border-[#9D4EDD] focus:ring-1 focus:ring-[#9D4EDD] text-[#9D4EDD] transition-colors"
             >
               {cartoes.map(c => <option key={c.id} value={c.id}>💳 {c.nome}</option>)}
             </select>
@@ -194,7 +194,7 @@ export default function FaturasPage() {
             <p className="text-slate-400 text-sm">Nenhum cartão cadastrado no sistema ainda.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:gap-8">
             
             {/* COLUNA ESQUERDA: HISTÓRICO DE FATURAS DISPONÍVEIS DO CARTÃO */}
             <div className="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-xl p-4 h-fit">
@@ -214,7 +214,7 @@ export default function FaturasPage() {
                         onClick={() => setFaturaSelecionada(f)}
                         className={`w-full text-left p-3 rounded-lg border text-sm flex items-center justify-between transition-all ${
                           ativo 
-                            ? 'bg-violet-500/10 border-violet-500 text-violet-300 font-bold' 
+                            ? 'bg-[#9D4EDD]/10 border-[#9D4EDD] text-[#9D4EDD] font-bold shadow-sm' 
                             : 'bg-slate-950 border-slate-900 hover:border-slate-800 text-slate-400'
                         }`}
                       >
@@ -241,25 +241,25 @@ export default function FaturasPage() {
               {faturaSelecionada ? (
                 <>
                   {/* Banner de Resumo da Fatura Selecionada */}
-                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                       <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Fatura em Detalhe</span>
-                      <h2 className="text-2xl font-black text-white mt-0.5">
+                      <h2 className="text-xl md:text-2xl font-black text-white mt-0.5">
                         {obterNomeMes(faturaSelecionada.mes)} <span className="text-slate-500 font-light">/ {faturaSelecionada.ano}</span>
                       </h2>
                     </div>
 
-                    <div className="flex items-center gap-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto mt-2 sm:mt-0">
                       <div className="text-left sm:text-right">
                         <span className="text-xs font-bold text-slate-500 uppercase block">Total Consolidado</span>
-                        <span className="text-2xl font-mono font-black text-violet-400">
+                        <span className="text-2xl font-mono font-black text-[#9D4EDD]">
                           R$ {totalFatura.toFixed(2)}
                         </span>
                       </div>
 
                       <button
                         onClick={() => handleAlternarStatusFatura(faturaSelecionada)}
-                        className={`px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-1.5 shadow-md transition-all ${
+                        className={`w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all ${
                           faturaSelecionada.status === 'PAGA'
                             ? 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'
                             : 'bg-slate-950 border border-slate-800 text-amber-400 hover:border-amber-500'
@@ -275,7 +275,7 @@ export default function FaturasPage() {
                   </div>
 
                   {/* Listagem das Parcelas Explodidas */}
-                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 md:p-6">
                     <h3 className="text-sm font-bold text-slate-300 mb-4">Extrato Detalhado da Fatura</h3>
 
                     {carregandoParcelas ? (
@@ -283,50 +283,53 @@ export default function FaturasPage() {
                     ) : parcelas.length === 0 ? (
                       <p className="text-xs text-slate-500 italic">Nenhuma transação vinculada a este período.</p>
                     ) : (
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-3 md:gap-2">
                         {parcelas.map((item) => (
-                          <div key={item.id} className="bg-slate-950 border border-slate-900/60 p-3 rounded-lg flex items-center justify-between group hover:border-slate-800 transition-colors">
-                            <div className="flex items-center gap-3">
-                              <div className="bg-violet-500/5 text-violet-400 p-2 rounded-lg border border-violet-500/10">
+                          <div key={item.id} className="bg-slate-950 border border-slate-900/60 p-3 md:p-4 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 group hover:border-slate-800 transition-colors">
+                            
+                            <div className="flex items-start sm:items-center gap-3 w-full sm:w-auto">
+                              <div className="bg-[#9D4EDD]/5 text-[#9D4EDD] p-2 rounded-lg border border-[#9D4EDD]/10 shrink-0 mt-0.5 sm:mt-0">
                                 <ChevronRight size={16} />
                               </div>
-                              <div>
-                                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="text-sm font-bold text-white break-words">
                                   {item.descricao}
                                 </h4>
-                                <div className="flex items-center gap-3 mt-1 text-[11px] text-slate-500">
-                                  <span className="flex items-center gap-0.5 text-slate-400">
+                                {/* Adicionado flex-wrap para evitar overflow das tags */}
+                                <div className="flex items-center flex-wrap gap-2 mt-1 text-[11px] text-slate-500">
+                                  <span className="flex items-center gap-0.5 text-slate-400 shrink-0">
                                     <User size={10} className="text-slate-600" /> {item.criado_por_nome || 'Local'}
                                   </span>
-                                  <span>•</span>
-                                  <span className="bg-slate-900 px-1.5 py-0.5 rounded text-[10px] border border-slate-800 text-slate-400 font-medium">
+                                  <span className="hidden sm:inline">•</span>
+                                  <span className="bg-slate-900 px-1.5 py-0.5 rounded text-[10px] border border-slate-800 text-slate-400 font-medium shrink-0">
                                     <Tag size={8} className="inline mr-1 text-slate-500" />
                                     {item.categoria?.nome || 'Geral'}
                                   </span>
-                                  <span>•</span>
-                                  <span className="font-mono text-[10px] flex gap-2">
+                                  <span className="hidden sm:inline">•</span>
+                                  <span className="font-mono text-[10px] flex flex-wrap gap-1 sm:gap-2 shrink-0">
                                     <span className="text-slate-500">
                                       Compra: {item.lancamento?.data ? item.lancamento.data.split('-').reverse().join('/') : 'Retroativa'}
                                     </span>
                                     <span>•</span>
-                                    <span className="text-violet-400 font-semibold">
+                                    <span className="text-[#9D4EDD] font-semibold">
                                         Fatura: {item.data_competencia.split('-').reverse().join('/')}
                                     </span>
-                                </span>
+                                  </span>
                                 </div>
                               </div>
                             </div>
 
-                            <div className="text-right">
+                            <div className="text-left sm:text-right border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0 w-full sm:w-auto flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center">
                               <span className="font-mono font-bold text-sm text-slate-200">
                                 R$ {item.valor.toFixed(2)}
                               </span>
                               {item.total_parcelas > 1 && (
-                                <p className="text-[9px] text-violet-400 font-bold bg-violet-500/10 px-1 rounded border border-violet-500/20 mt-0.5 w-fit ml-auto">
+                                <p className="text-[9px] text-[#9D4EDD] font-bold bg-[#9D4EDD]/10 px-1.5 py-0.5 rounded border border-[#9D4EDD]/20 sm:mt-0.5 w-fit">
                                   {item.numero_parcela}/{item.total_parcelas}
                                 </p>
                               )}
                             </div>
+                            
                           </div>
                         ))}
                       </div>

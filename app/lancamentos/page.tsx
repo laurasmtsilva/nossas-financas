@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
+import { IconeCategorias, ICONES_DISPONIVEIS } from '@/components/IconeCategorias'
 import { 
   DollarSign, Calendar, FileText, Tag, Wallet, User,
-  CreditCard, ArrowUpRight, ArrowDownLeft, PlusCircle, Trash2, Search
+  CreditCard, ArrowUpRight, ArrowDownLeft, Trash2, ChevronDown
 } from 'lucide-react'
 
 interface Categoria {
@@ -13,6 +14,7 @@ interface Categoria {
   nome: string
   parent_id: string | null
   tipo: 'RECEITA' | 'DESPESA'
+  icone?: string
 }
 
 interface Lancamento {
@@ -51,8 +53,12 @@ export default function Lancamentos() {
   const [categoriaId, setCategoriaId] = useState('')
   const [contaId, setContaId] = useState('')
   
-  const [buscaCategoria, setBuscaCategoria] = useState('')
+  // Novos estados para a Categoria em Árvore
   const [dropdownCatAberto, setDropdownCatAberto] = useState(false)
+  const [novaCatNome, setNovaCatNome] = useState('')
+  const [novaCatParentId, setNovaCatParentId] = useState('')
+  const [novaCatIcone, setNovaCatIcone] = useState('📁')
+  const [expandedParents, setExpandedParents] = useState<Record<string, boolean>>({})
   
   const [meioPagamento, setMeioPagamento] = useState<'CONTA' | 'CARTAO'>('CONTA')
   const [numeroParcelas, setNumeroParcelas] = useState('1')
@@ -98,7 +104,6 @@ export default function Lancamentos() {
 
   useEffect(() => {
     setCategoriaId('')
-    setBuscaCategoria('')
     if (tipo === 'RECEITA') setMeioPagamento('CONTA')
   }, [tipo])
 
@@ -122,6 +127,40 @@ export default function Lancamentos() {
     return { ano, mes }
   }
 
+  async function handleCriarCategoriaRapida() {
+    if (!novaCatNome.trim()) return
+    
+    setStatus('Processando categoria...')
+    
+    const { data: novaCategoria, error } = await supabase
+      .from('categorias')
+      .insert([{ 
+        nome: novaCatNome.trim(), 
+        tipo: tipo,
+        parent_id: novaCatParentId || null,
+        icone: novaCatIcone
+      }])
+      .select()
+      .single()
+
+    if (error) {
+      setStatus(`❌ Erro ao criar categoria: ${error.message}`)
+      return
+    }
+
+    setNovaCatNome('')
+    setNovaCatParentId('')
+    setNovaCatIcone('📁')
+    
+    if (novaCategoria) {
+      setCategoriaId(novaCategoria.id)
+      setDropdownCatAberto(false)
+    }
+    
+    setStatus('')
+    carregarDados()
+  }
+
   async function handleSalvar(e: React.FormEvent) {
     e.preventDefault()
     setStatus('Processando...')
@@ -131,14 +170,12 @@ export default function Lancamentos() {
       return
     }
 
-    // Identifica dinamicamente quem é o usuário logado
     const { data: userData } = await supabase.auth.getUser()
     const usuarioNome = userData?.user?.email?.split('@')[0] || 'Usuário Local'
 
     const valorTotal = parseFloat(valor)
     const totalParcelas = meioPagamento === 'CARTAO' ? parseInt(numeroParcelas) : 1
 
-    // STEP 1: Salvar o registro Mestre em 'lancamentos' com o autor automático
     const { data: novoLancamento, error: errLanc } = await supabase
       .from('lancamentos')
       .insert([{
@@ -162,7 +199,6 @@ export default function Lancamentos() {
     }
 
     try {
-      // STEP 2: Tratar a explosão de registros na tabela 'transacoes'
       if (meioPagamento === 'CONTA') {
         await supabase.from('transacoes').insert([{
           lancamento_id: novoLancamento.id,
@@ -233,7 +269,6 @@ export default function Lancamentos() {
       setDescricao('')
       setValor('')
       setCategoriaId('')
-      setBuscaCategoria('')
       setNumeroParcelas('1')
       setContaId('')
       carregarDados()
@@ -254,23 +289,17 @@ export default function Lancamentos() {
     ? cartoesCredito.map(c => ({ id: c.id, exibicao: c.nome }))
     : contasBancarias.map(c => ({ id: c.id, exibicao: c.apelido }))
 
-  const categoriasFiltradas = categorias.filter(cat => {
-    if (tipo !== cat.tipo) return false
-    if (buscaCategoria && !cat.nome.toLowerCase().includes(buscaCategoria.toLowerCase())) return false
-    return true
-  })
-
   return (
-    <main className="min-h-screen bg-slate-950 text-white font-sans p-8">
+    <main className="min-h-screen bg-slate-950 text-white font-sans p-4 md:p-8 max-w-full overflow-x-hidden">
       
       <Navbar />
 
-      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
+      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 md:gap-8">
         
-        {/* FORMULÁRIO (LIMPO - SEM O CAMPO QUEM INCLUIU) */}
-        <div className="w-full lg:w-1/2 bg-slate-900 p-6 rounded-xl border border-slate-800 h-fit">
-          <h1 className="text-2xl font-bold text-emerald-400 mb-6 flex items-center gap-2">
-            <PlusCircle size={24} /> Registrar Fluxo
+        {/* FORMULÁRIO */}
+        <div className="w-full lg:w-1/2 bg-slate-900 p-5 md:p-6 rounded-xl border border-slate-800 h-fit">
+          <h1 className="text-xl md:text-2xl font-bold text-[#9D4EDD] mb-6 flex items-center gap-2">
+            Registrar Fluxo
           </h1>
           
           <form onSubmit={handleSalvar} className="flex flex-col gap-4">
@@ -332,7 +361,7 @@ export default function Lancamentos() {
                   <button 
                     type="button" 
                     onClick={() => { setMeioPagamento('CARTAO'); setContaId(''); }} 
-                    className={`py-2 flex items-center justify-center gap-2 text-xs font-bold rounded border ${meioPagamento === 'CARTAO' ? 'bg-violet-500/20 border-violet-500 text-violet-400' : 'bg-slate-950 border-slate-800 text-slate-500'}`}
+                    className={`py-2 flex items-center justify-center gap-2 text-xs font-bold rounded border ${meioPagamento === 'CARTAO' ? 'bg-[#9D4EDD]/20 border-[#9D4EDD] text-[#9D4EDD]' : 'bg-slate-950 border-slate-800 text-slate-500'}`}
                   >
                     <CreditCard size={14} /> Cartão de Crédito
                   </button>
@@ -343,61 +372,135 @@ export default function Lancamentos() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase mb-1 flex items-center gap-1"><DollarSign size={12}/> Valor (R$)</label>
-                <input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0,00" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white focus:outline-none font-mono"/>
+                <input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0,00" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#9D4EDD] focus:ring-1 focus:ring-[#9D4EDD] font-mono transition-colors"/>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase mb-1 flex items-center gap-1"><Calendar size={12}/> Data</label>
-                <input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white focus:outline-none font-mono"/>
+                <input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#9D4EDD] focus:ring-1 focus:ring-[#9D4EDD] font-mono transition-colors"/>
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-400 uppercase mb-1 flex items-center gap-1"><FileText size={12}/> Descrição / Estabelecimento</label>
-              <input type="text" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Ex: Mercado Central, Posto..." className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white focus:outline-none"/>
+              <input type="text" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Ex: Mercado Central, Posto..." className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#9D4EDD] focus:ring-1 focus:ring-[#9D4EDD] transition-colors"/>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              
+              {/* Categoria com ícone */}
               <div className="relative">
                 <label className="block text-xs font-semibold text-slate-400 uppercase mb-1 flex items-center gap-1"><Tag size={12}/> Categoria</label>
-                <div className="relative">
-                  <input 
-                    type="text"
-                    value={buscaCategoria}
-                    onFocus={() => setDropdownCatAberto(true)}
-                    onBlur={() => setTimeout(() => setDropdownCatAberto(false), 250)}
-                    onChange={(e) => {
-                      setBuscaCategoria(e.target.value)
-                      setDropdownCatAberto(true)
-                      if (!e.target.value) setCategoriaId('')
-                    }}
-                    placeholder="Buscar..."
-                    className="w-full bg-slate-950 border border-slate-800 rounded pl-3 pr-8 py-2 text-sm text-white focus:outline-none"
-                  />
-                  <Search size={14} className="absolute right-2.5 top-3 text-slate-600" />
+                
+                <div 
+                  className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white cursor-pointer flex justify-between items-center focus:outline-none focus:border-[#9D4EDD] focus:ring-1 focus:ring-[#9D4EDD] transition-colors"
+                  onClick={() => setDropdownCatAberto(!dropdownCatAberto)}
+                >
+                  <span className={categoriaId ? "text-white flex items-center gap-2" : "text-slate-500"}>
+                    {categoriaId ? (
+                      <>
+                        <span>{categorias.find(c => c.id === categoriaId)?.nome}</span>
+                      </>
+                    ) : "Selecionar categoria..."}
+                  </span>
+                  <ChevronDown size={14} className="text-slate-600" />
                 </div>
 
                 {dropdownCatAberto && (
-                  <div className="absolute z-50 w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg max-h-48 overflow-y-auto shadow-2xl">
-                    {categoriasFiltradas.map(cat => (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => { setCategoriaId(cat.id); setBuscaCategoria(cat.nome); setDropdownCatAberto(false); }}
-                        className={`w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-slate-900 border-b border-slate-900 last:border-0 ${categoriaId === cat.id ? 'bg-emerald-500/10 text-emerald-400 font-bold' : ''}`}
-                      >
-                        {cat.parent_id ? `↳ ${cat.nome}` : cat.nome}
-                      </button>
-                    ))}
+                  <div className="absolute z-50 w-full mt-1 bg-slate-950 border border-[#9D4EDD]/50 rounded-lg max-h-80 overflow-y-auto shadow-2xl p-3 flex flex-col gap-3">
+                    
+                    {/* Painel de Cadastro Rápido com Seletor de Ícone */}
+                    <div className="bg-slate-900 p-2 rounded border border-slate-800 flex flex-col gap-2">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Cadastro Rápido</span>
+                      
+                        <div className="bg-slate-900 p-3 rounded border border-slate-800 mb-4">
+                          <label className="text-[10px] text-slate-400 font-bold uppercase">Novo Ícone</label>
+                          <div className="grid grid-cols-8 gap-1 my-2 h-24 overflow-y-auto p-1 bg-slate-950 rounded border border-slate-800">
+                            {ICONES_DISPONIVEIS.map(ic => (
+                            <button key={ic} type="button" onClick={() => setNovaCatIcone(ic)} className={`p-1.5 rounded ${novaCatIcone === ic ? 'bg-[#9D4EDD]' : 'bg-slate-900'}`}>
+                              <IconeCategorias nome={ic} size={16} />
+                            </button>
+                            ))}
+                          </div>
+                          <input value={novaCatNome} onChange={(e) => setNovaCatNome(e.target.value)} placeholder="Nome da categoria" className="w-full bg-slate-950 p-2 rounded border border-slate-800 text-sm mb-2" />
+                          <button type="button" onClick={handleCriarCategoriaRapida} className="w-full bg-[#9D4EDD] py-2 rounded text-sm font-bold">Criar Categoria</button>
+                        </div>
+
+                     <div className="flex gap-2">
+                        <select 
+                          value={novaCatParentId} 
+                          onChange={(e) => setNovaCatParentId(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-[#9D4EDD] truncate"
+                        >
+                          <option value="">Principal (Sem Pai)</option>
+                          {categorias.filter(c => !c.parent_id && c.tipo === tipo).map(pai => (
+                            <option key={pai.id} value={pai.id}>Pai: {pai.nome}</option>
+                          ))}
+                        </select>
+                        <button 
+                          type="button"
+                          onClick={handleCriarCategoriaRapida}
+                          className="bg-[#9D4EDD] hover:bg-[#8e40c9] text-white px-3 py-1.5 rounded text-xs font-bold transition-colors shrink-0"
+                        >
+                          Criar
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Árvore de Categorias Existentes */}
+                    <div className="flex flex-col gap-1">
+                      {categorias.filter(c => !c.parent_id && c.tipo === tipo).map(pai => (
+                        <div key={pai.id} className="flex flex-col">
+                          <div className="flex items-center justify-between group">
+                            <button
+                              type="button"
+                              onClick={() => { setCategoriaId(pai.id); setDropdownCatAberto(false); }}
+                              className={`flex-1 text-left px-2 py-1.5 text-sm font-bold rounded transition-colors flex items-center gap-2 ${categoriaId === pai.id ? 'text-[#9D4EDD] bg-[#9D4EDD]/10' : 'text-slate-200 hover:bg-slate-900'}`}
+                            >
+                              <span>{pai.nome}</span>
+                            </button>
+                            {categorias.some(f => f.parent_id === pai.id) && (
+                              <button 
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setExpandedParents(prev => ({...prev, [pai.id]: !prev[pai.id]})) }}
+                                className="p-1.5 text-slate-500 hover:text-white transition-colors"
+                              >
+                                <ChevronDown size={14} className={`transition-transform ${expandedParents[pai.id] ? "rotate-180" : ""}`} />
+                              </button>
+                            )}
+                          </div>
+                          
+                          {expandedParents[pai.id] && (
+                            <div className="flex flex-col ml-3 mt-1 border-l border-slate-800 pl-2 gap-1">
+                              {categorias.filter(f => f.parent_id === pai.id).map(filho => (
+                                <button
+                                  key={filho.id}
+                                  type="button"
+                                  onClick={() => { setCategoriaId(filho.id); setDropdownCatAberto(false); }}
+                                  className={`text-left px-2 py-1.5 text-sm rounded transition-colors flex items-center gap-2 ${categoriaId === filho.id ? 'text-[#9D4EDD] bg-[#9D4EDD]/10 font-bold' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'}`}
+                                >
+                                  <span>{filho.nome}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {categorias.filter(c => c.tipo === tipo).length === 0 && (
+                        <p className="text-xs text-slate-500 italic px-2 py-1">Nenhuma categoria encontrada para este tipo.</p>
+                      )}
+                    </div>
+
                   </div>
                 )}
               </div>
+              {/* FIM DA LÓGICA DE CATEGORIA */}
 
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase mb-1 flex items-center gap-1">
                   {meioPagamento === 'CARTAO' ? <CreditCard size={12}/> : <Wallet size={12}/>}
                   {meioPagamento === 'CARTAO' ? 'Qual Cartão?' : 'Qual Conta?'}
                 </label>
-                <select value={contaId} onChange={(e) => setContaId(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white focus:outline-none">
+                <select value={contaId} onChange={(e) => setContaId(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#9D4EDD] focus:ring-1 focus:ring-[#9D4EDD] transition-colors">
                   <option value="">Selecionar...</option>
                   {opcoesPagamentoFiltradas.map(c => <option key={c.id} value={c.id}>{c.exibicao}</option>)}
                 </select>
@@ -405,9 +508,9 @@ export default function Lancamentos() {
             </div>
 
             {meioPagamento === 'CARTAO' && tipo === 'DESPESA' && (
-              <div className="bg-violet-950/20 border border-violet-900/40 p-3 rounded-lg">
-                <label className="block text-xs font-semibold text-violet-400 uppercase mb-1">Parcelamento</label>
-                <select value={numeroParcelas} onChange={(e) => setNumeroParcelas(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-white focus:outline-none font-mono">
+              <div className="bg-[#9D4EDD]/10 border border-[#9D4EDD]/30 p-3 rounded-lg mt-2">
+                <label className="block text-xs font-semibold text-[#9D4EDD] uppercase mb-1">Parcelamento</label>
+                <select value={numeroParcelas} onChange={(e) => setNumeroParcelas(e.target.value)} className="w-full bg-slate-950 border border-[#9D4EDD]/30 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#9D4EDD] focus:ring-1 focus:ring-[#9D4EDD] font-mono transition-colors">
                   <option value="1">À vista (1x)</option>
                   {[2,3,4,5,6,7,8,9,10,11,12].map(p => (
                     <option key={p} value={p}>{p}x de R$ {(parseFloat(valor || '0') / p).toFixed(2)}</option>
@@ -416,16 +519,16 @@ export default function Lancamentos() {
               </div>
             )}
 
-            <button type="submit" className="w-full bg-emerald-500 text-slate-950 font-bold py-2.5 rounded-lg text-sm mt-2 shadow-lg hover:bg-emerald-400 transition-colors">
+            <button type="submit" className="w-full bg-[#9D4EDD] hover:bg-[#8e40c9] text-white font-bold py-3 rounded-lg text-sm mt-3 shadow-lg transition-colors">
               Confirmar Lançamento
             </button>
           </form>
           {status && <p className="mt-4 p-3 bg-slate-950 border border-slate-800 rounded text-xs text-slate-300 font-mono break-words">{status}</p>}
         </div>
 
-        {/* HISTÓRICO MESTRE (MANTÉM O CAMPO "POR: USUÁRIO") */}
-        <div className="w-full lg:w-1/2 bg-slate-900 p-6 rounded-xl border border-slate-800">
-          <h2 className="text-xl font-bold text-slate-200 mb-6">Últimas Movimentações (Mestre)</h2>
+        {/* HISTÓRICO MESTRE */}
+        <div className="w-full lg:w-1/2 bg-slate-900 p-5 md:p-6 rounded-xl border border-slate-800 h-fit">
+          <h2 className="text-lg md:text-xl font-bold text-slate-200 mb-6">Últimas Movimentações</h2>
           
           {carregando ? (
             <p className="text-slate-400 text-sm font-mono">Buscando histórico...</p>
@@ -434,28 +537,29 @@ export default function Lancamentos() {
           ) : (
             <div className="flex flex-col gap-3">
               {lancamentos.map((item) => (
-                <div key={item.id} className="bg-slate-950 p-3.5 rounded-lg border border-slate-800 flex items-center justify-between group">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${item.tipo === 'RECEITA' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                <div key={item.id} className="bg-slate-950 p-3 md:p-4 rounded-lg border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between group gap-3">
+                  <div className="flex items-start md:items-center gap-3">
+                    <div className={`p-2 rounded-lg shrink-0 mt-1 sm:mt-0 ${item.tipo === 'RECEITA' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
                       {item.tipo === 'RECEITA' ? <ArrowUpRight size={18} /> : <ArrowDownLeft size={18} />}
                     </div>
                     <div>
-                      <h4 className="font-bold text-sm text-white line-clamp-1">{item.descricao}</h4>
-                      <div className="flex items-center flex-wrap gap-2 mt-1 text-[11px] text-slate-400">
+                      <h4 className="font-bold text-sm text-white break-words">{item.descricao}</h4>
+                      
+                      <div className="flex items-center flex-wrap gap-1.5 mt-1 text-[11px] text-slate-400">
                         <span className={`px-1.5 py-0.5 rounded font-mono text-[10px] font-bold border ${item.tipo_pessoa === 'PJ' ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-blue-500/10 border-blue-500/30 text-blue-400'}`}>
                           {item.tipo_pessoa || 'PF'}
                         </span>
                         
-                        {/* Exibição Clara do Autor Coletado Automaticamente */}
                         <span className="text-slate-400 bg-slate-900 px-1.5 py-0.5 border border-slate-800/80 rounded flex items-center gap-1 text-[10px]">
                           <User size={10} className="text-slate-500" /> {item.criado_por_nome || 'Sistema'}
                         </span>
                         
-                        <span>•</span>
-                        <span className="bg-slate-900 px-1.5 py-0.5 rounded text-[10px] border border-slate-800">{item.categoria?.nome || 'Sem Cat.'}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          {item.meio_pagamento === 'CARTAO' ? <CreditCard size={10} className="text-violet-400" /> : <Wallet size={10} />}
+                        <span className="bg-slate-900 px-1.5 py-0.5 rounded text-[10px] border border-slate-800">
+                          {item.categoria?.nome || 'Sem Cat.'}
+                        </span>
+                        
+                        <span className="flex items-center gap-1 bg-slate-900 px-1.5 py-0.5 rounded text-[10px] border border-slate-800">
+                          {item.meio_pagamento === 'CARTAO' ? <CreditCard size={10} className="text-[#9D4EDD]" /> : <Wallet size={10} />}
                           {item.meio_pagamento === 'CARTAO' 
                             ? cartoesCredito.find(c => c.id === item.conta_id)?.nome || 'Cartão'
                             : contasBancarias.find(c => c.id === item.conta_id)?.apelido || 'Conta'
@@ -465,15 +569,15 @@ export default function Lancamentos() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <span className={`font-mono text-sm font-bold ${item.tipo === 'RECEITA' ? 'text-emerald-400' : 'text-slate-200'}`}>
+                  <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0">
+                    <div className="text-left sm:text-right">
+                      <span className={`font-mono text-sm font-bold block ${item.tipo === 'RECEITA' ? 'text-emerald-400' : 'text-slate-200'}`}>
                         {item.tipo === 'RECEITA' ? '+' : '-'} R$ {item.valor.toFixed(2)}
                       </span>
                       <p className="text-[10px] text-slate-500 font-mono mt-0.5">{item.data.split('-').reverse().join('/')}</p>
                     </div>
-                    <button onClick={() => handleDeletar(item.id)} className="text-slate-600 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Trash2 size={14} />
+                    <button onClick={() => handleDeletar(item.id)} className="text-slate-600 hover:text-red-400 p-2 md:p-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity bg-slate-900 md:bg-transparent rounded md:rounded-none">
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>

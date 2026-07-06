@@ -17,7 +17,6 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: 'Nossas Finanças',
   description: 'Gestão financeira familiar',
-  //manifest: '/manifest.json', // Opcional, se quiser criar um manifest depois
   icons: {
     icon: '/icon.png',
     apple: '/icon.png',
