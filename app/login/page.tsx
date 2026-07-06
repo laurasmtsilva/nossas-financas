@@ -22,10 +22,11 @@ export default function LoginPage() {
         email: emailAuth,
         password: senhaAuth,
       })
+      
       if (error) throw error
       
-      router.push('/')
-      router.refresh() 
+      window.location.href = '/'
+      
     } catch (error: any) { 
       alert("Erro ao entrar. Verifique suas credenciais.") 
     }
