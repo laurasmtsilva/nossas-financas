@@ -46,10 +46,10 @@ export default function Navbar() {
             <CreditCard size={16} /> Faturas
           </Link>
           <Link href="/contas" className="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white">
-            <Landmark size={16} /> Contas
+            <Landmark size={16} /> Contas Bancárias
           </Link>
           <Link href="/cartoes" className="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white">
-            <WalletCards size={16} /> Cartões
+            <WalletCards size={16} /> Cartões de Crédito
           </Link>
           <Link href="/categorias" className="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white">
             <Tags size={16} /> Categorias

@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import { IconeCategorias, ICONES_DISPONIVEIS } from '@/components/IconeCategorias'
+import { parseClipboard } from '@/utils/parser'
 import { 
   DollarSign, Calendar, FileText, Tag, Wallet, User,
-  CreditCard, ArrowUpRight, ArrowDownLeft, Trash2, ChevronDown
+  CreditCard, ArrowUpRight, ArrowDownLeft, Trash2, ChevronDown, Clipboard
 } from 'lucide-react'
 
 interface Categoria {
@@ -53,11 +54,10 @@ export default function Lancamentos() {
   const [categoriaId, setCategoriaId] = useState('')
   const [contaId, setContaId] = useState('')
   
-  // Novos estados para a Categoria em Árvore
   const [dropdownCatAberto, setDropdownCatAberto] = useState(false)
   const [novaCatNome, setNovaCatNome] = useState('')
   const [novaCatParentId, setNovaCatParentId] = useState('')
-  const [novaCatIcone, setNovaCatIcone] = useState('📁')
+  const [novaCatIcone, setNovaCatIcone] = useState('')
   const [expandedParents, setExpandedParents] = useState<Record<string, boolean>>({})
   
   const [meioPagamento, setMeioPagamento] = useState<'CONTA' | 'CARTAO'>('CONTA')
@@ -107,6 +107,31 @@ export default function Lancamentos() {
     if (tipo === 'RECEITA') setMeioPagamento('CONTA')
   }, [tipo])
 
+  // Função para Colar SMS
+  async function handleColarSMS() {
+    try {
+      const text = await navigator.clipboard.readText()
+      const dados = parseClipboard(text)
+      const descricaoFormatada = dados.descricao
+      .toLowerCase()
+      .split(' ')
+      .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+      .join(' ')
+
+      setDescricao(descricaoFormatada)
+      
+      if (dados.valor) setValor(dados.valor.toString())
+      if (dados.data && dados.data.includes('/')) {
+        const [d, m] = dados.data.split('/')
+        const y = new Date().getFullYear()
+        setData(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`)
+      }
+      setStatus('✅ Dados do SMS preenchidos!')
+    } catch (err) {
+      setStatus('❌ Erro ao ler a área de transferência.')
+    }
+  }
+
   function calcularMesAnoFatura(dataCompraStr: string, diaFechamento: number, parcelaIndex: number) {
     const parts = dataCompraStr.split('-')
     let ano = parseInt(parts[0])
@@ -150,7 +175,7 @@ export default function Lancamentos() {
 
     setNovaCatNome('')
     setNovaCatParentId('')
-    setNovaCatIcone('📁')
+    setNovaCatIcone('')
     
     if (novaCategoria) {
       setCategoriaId(novaCategoria.id)
@@ -298,9 +323,18 @@ export default function Lancamentos() {
         
         {/* FORMULÁRIO */}
         <div className="w-full lg:w-1/2 bg-slate-900 p-5 md:p-6 rounded-xl border border-slate-800 h-fit">
-          <h1 className="text-xl md:text-2xl font-bold text-[#9D4EDD] mb-6 flex items-center gap-2">
-            Registrar Fluxo
-          </h1>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-xl md:text-2xl font-bold text-[#9D4EDD] flex items-center gap-2">
+              Registrar Fluxo
+            </h1>
+            <button 
+              type="button"
+              onClick={handleColarSMS}
+              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 px-3 py-2 rounded-lg border border-slate-700 transition-colors"
+            >
+              <Clipboard size={14} /> Colar SMS
+            </button>
+          </div>
           
           <form onSubmit={handleSalvar} className="flex flex-col gap-4">
             
@@ -422,28 +456,14 @@ export default function Lancamentos() {
                             ))}
                           </div>
                           <input value={novaCatNome} onChange={(e) => setNovaCatNome(e.target.value)} placeholder="Nome da categoria" className="w-full bg-slate-950 p-2 rounded border border-slate-800 text-sm mb-2" />
+                          
+                          <select value={novaCatParentId} onChange={(e) => setNovaCatParentId(e.target.value)} className="w-full bg-slate-950 p-2 rounded border border-slate-800 text-sm mb-2 text-slate-300">
+                            <option value="">Nenhuma (Raiz)</option>
+                            {categorias.filter(c => !c.parent_id && c.tipo === tipo).map(cat => <option key={cat.id} value={cat.id}>{cat.nome}</option>)}
+                          </select>
+                          
                           <button type="button" onClick={handleCriarCategoriaRapida} className="w-full bg-[#9D4EDD] py-2 rounded text-sm font-bold">Criar Categoria</button>
                         </div>
-
-                     <div className="flex gap-2">
-                        <select 
-                          value={novaCatParentId} 
-                          onChange={(e) => setNovaCatParentId(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-[#9D4EDD] truncate"
-                        >
-                          <option value="">Principal (Sem Pai)</option>
-                          {categorias.filter(c => !c.parent_id && c.tipo === tipo).map(pai => (
-                            <option key={pai.id} value={pai.id}>Pai: {pai.nome}</option>
-                          ))}
-                        </select>
-                        <button 
-                          type="button"
-                          onClick={handleCriarCategoriaRapida}
-                          className="bg-[#9D4EDD] hover:bg-[#8e40c9] text-white px-3 py-1.5 rounded text-xs font-bold transition-colors shrink-0"
-                        >
-                          Criar
-                        </button>
-                      </div>
                     </div>
 
                     {/* Árvore de Categorias Existentes */}
@@ -493,7 +513,6 @@ export default function Lancamentos() {
                   </div>
                 )}
               </div>
-              {/* FIM DA LÓGICA DE CATEGORIA */}
 
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase mb-1 flex items-center gap-1">

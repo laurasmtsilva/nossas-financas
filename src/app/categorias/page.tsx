@@ -112,6 +112,15 @@ export default function Categorias() {
                 <button type="button" onClick={() => setTipo('DESPESA')} className={`py-2 text-xs font-bold rounded border ${tipo === 'DESPESA' ? 'bg-red-500/20 border-red-500 text-red-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}>🔴 DESPESA</button>
               </div>
             </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Ícone</label>
+              <div className="grid grid-cols-6 gap-2 bg-slate-950 p-2 rounded border border-slate-800 max-h-32 overflow-y-auto">
+                {Object.keys(iconeComponentes).map(i => {
+                  const Icone = iconeComponentes[i]
+                  return <button key={i} type="button" onClick={() => setIconeSelecionado(i)} className={`p-2 rounded ${iconeSelecionado === i ? 'bg-[#9D4EDD] text-white' : 'text-slate-500'}`}><Icone size={16} /></button>
+                })}
+              </div>
+            </div>
             <button type="submit" className="w-full bg-[#9D4EDD] hover:bg-[#8e40c9] py-2 rounded text-sm font-bold mt-2">Criar Categoria</button>
           </form>
         </div>
