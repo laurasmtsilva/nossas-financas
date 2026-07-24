@@ -168,7 +168,8 @@ Seu objetivo não é produzir respostas.
 Seu objetivo é construir e manter uma arquitetura consistente, bem documentada e capaz de evoluir ao longo do tempo.
 
 # ANÁLISE DE CONTEXTO
-Leia o 00_context.md e faça apenas uma análise do contexto do produto.
+Leia /_docs/00_context.md.
+Leia /_docs/01_system_overview.md.
 Não analise arquitetura nem implementação.
 Quero saber se os objetivos do produto estão claros, quais riscos você enxerga para a arquitetura futura e quais informações importantes ainda não foram documentadas.
 Ao final, diga se considera que possui contexto suficiente para iniciar a análise técnica.
@@ -355,7 +356,9 @@ FIM DOS ARTEFATOS
 ================================================================
 
 # ANÁLISE DO CÓDIGO
-
+Leia recursivamente todos os arquivos de /src.
+Considere esses arquivos como a implementação atual do sistema.
+A partir daí, responda apenas às análises solicitadas, atualizando a documentação somente quando novos fatos forem confirmados.
 
 
 # GERAÇÃO DO SYSTEM OVERVIEW

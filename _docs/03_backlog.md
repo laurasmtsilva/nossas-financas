@@ -25,3 +25,4 @@ F14,Máscara Monetária no Input,🟡 Média,Formulário de lançamentos,A Fazer
 Criar estado inativo para contas e cartões, uma vez que a exclusão prejudica o banco de dados.
 Mudar layout para que ele siga o padrão de cores do sistema (claro ou escuro)
 Vincular o débito da conta à alteração do status da fatura entre ABERTA e PAGA
+Criar notificações: atualização de versão, quando gastos atingirem % do orçamento, lembretes semanais para cadastro dos lançamentos.
