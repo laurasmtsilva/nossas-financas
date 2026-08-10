@@ -7,8 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "ai": "tsx tools/ai-context/index.ts"
+    "lint": "eslint"
   },
   "dependencies": {
     "@supabase/auth-ui-react": "^0.4.7",
