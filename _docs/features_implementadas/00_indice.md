@@ -20,6 +20,7 @@
 | [Gestão de Cartões de Crédito](./gestao_de_cartoes_de_credito.md) | `/cartoes` | Qual cartão é mais adequado para esta compra | F07 — ✅ Concluída (coerente) |
 | [Gestão de Categorias](./gestao_de_categorias.md) | `/categorias` | Nenhuma conexão direta | Sem item específico |
 | [Ferramenta Interna de Teste do Parser de SMS](./ferramenta_interna_teste_parser.md) | `/teste-parser` | Nenhuma (ferramenta de apoio técnico) | Sem item correspondente |
+|[F04 - Resumo Visual Mensal](./F04_resumo_visual_mensal.md) | `/` | Quanto ainda podemos gastar? | F04 |
 
 ## Observações sobre o Catálogo
 
